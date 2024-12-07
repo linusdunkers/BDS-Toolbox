@@ -27,7 +27,7 @@ The plugin is rooted in internationally recognized human rights principles. Foll
 == Installation ==
 
 1. **Upload the Plugin Files:**
-   Upload the `BDS-Toolbox` folder to the `/wp-content/plugins/` directory of your WordPress installation.
+   Upload the `bds-toolbox` folder to the `/wp-content/plugins/` directory of your WordPress installation.
 
 2. **Activate the Plugin:**
    Go to the 'Plugins' menu in WordPress and activate the **BDS Toolbox** plugin.

@@ -54,7 +54,7 @@ function bds_toolbox_register_settings() {
         'bds_toolbox_main_section',                    // Section ID.
         esc_html__( 'Custom HTML Content', 'bds-toolbox' ), // Section title.
         function () {
-            echo '<p>' . esc_html__( 'Enter the HTML content to display to visitors from Israel. If left blank, the default BDS page will be displayed.', 'BDS-Toolbox' ) . '</p>';
+            echo '<p>' . esc_html__( 'Enter the HTML content to display to visitors from Israel. If left blank, the default BDS page will be displayed.', 'bds-toolbox' ) . '</p>';
         },
         'bds-toolbox' // Page slug.
     );

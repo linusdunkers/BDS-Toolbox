@@ -1,0 +1,7 @@
+{
+  "name": "bds-toolbox/bds-toolbox",
+  "description": "WordPress plugin using Composer",
+  "require": {
+    "geoip2/geoip2": "^3.1"
+  }
+}

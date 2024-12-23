@@ -1,6 +1,6 @@
 === BDS Toolbox ===
 Contributors: linusdunkers
-Donate link: https://bdsmovement.net/donate
+Donate link: https://bdsmovement.net/donate_
 Tags: geoip, country filter, content restriction, human rights, BDS
 Requires at least: 4.0
 Tested up to: 6.7
@@ -72,7 +72,7 @@ Yes. BDS Toolbox performs minimal operations to ensure it has negligible impact 
 == More Information ==
 
 - **GitHub Repository:** [https://github.com/linusdunkers/BDS-Toolbox](https://github.com/linusdunkers/BDS-Toolbox)
-- **Donate:** Support the BDS Movement by donating at [https://bdsmovement.net/donate](https://bdsmovement.net/donate)
+- **Donate:** Support the BDS Movement by donating at [https://bdsmovement.net/donate_](https://bdsmovement.net/donate_)
 - **Learn More About BDS:** Visit [https://bdsmovement.net](https://bdsmovement.net)
 
 == License ==

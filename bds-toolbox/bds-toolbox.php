@@ -3,7 +3,7 @@
  * Plugin Name: BDS Toolbox
  * Plugin URI: https://github.com/linusdunkers/BDS-Toolbox
  * Description: A WordPress plugin that filters visitors based on GeoIP location, showing a custom or default BDS page for visitors from Israel.
- * Version: 1.0
+ * Version: 1.0.1
  * Author: Linus Dunkers
  * Author URI: https://github.com/linusdunkers
  * License: GPLv2 or later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants.
-define( 'BDS_TOOLBOX_VERSION', '1.0' );
+define( 'BDS_TOOLBOX_VERSION', '1.0.1' );
 define( 'BDS_TOOLBOX_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BDS_TOOLBOX_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BDS_TOOLBOX_GEOIP_DB', BDS_TOOLBOX_PLUGIN_DIR . 'GeoLite2-Country.mmdb' );

@@ -1,101 +1,134 @@
 <?php
 /**
- * Plugin Name: BDS Toolbox
- * Plugin URI: https://github.com/linusdunkers/BDS-Toolbox
- * Description: A WordPress plugin that filters visitors based on GeoIP location, showing a custom or default BDS page for visitors from Israel.
- * Version: 1.0.1
- * Author: Linus Dunkers
- * Author URI: https://github.com/linusdunkers
- * License: GPLv2 or later
- * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: bds-toolbox
+ * Plugin Name:       BDS Toolbox
+ * Plugin URI:        https://github.com/linusdunkers/BDS-Toolbox
+ * Description:       A WordPress plugin that filters visitors based on GeoIP location, showing a custom or default BDS page for visitors from Israel.
+ * Version:           1.0.2
+ * Requires at least: 4.0
+ * Requires PHP:      7.4
+ * Author:            Linus Dunkers
+ * Author URI:        https://github.com/linusdunkers
+ * License:           GPL v2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain:       bds-toolbox
+ * Domain Path:       /languages
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
+if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly.
 }
 
-// Define constants.
-define( 'BDS_TOOLBOX_VERSION', '1.0.1' );
-define( 'BDS_TOOLBOX_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'BDS_TOOLBOX_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'BDS_TOOLBOX_GEOIP_DB', BDS_TOOLBOX_PLUGIN_DIR . 'GeoLite2-Country.mmdb' );
+class BDSToolbox {
+    
+    const VERSION = '1.0.2';
+    const OPTION_NAME = 'bds_toolbox_custom_html';
 
-// Include Composer autoloader for GeoIP2 library.
-if ( file_exists( BDS_TOOLBOX_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
-    require_once BDS_TOOLBOX_PLUGIN_DIR . 'vendor/autoload.php';
-} else {
-    return;
-}
+    private static $geoip_db_path;
 
-use GeoIp2\Database\Reader;
+    /**
+     * Initialize plugin constants, hooks, and actions.
+     */
+    public static function init() {
+        define('BDS_TOOLBOX_PLUGIN_DIR', plugin_dir_path(__FILE__));
+        define('BDS_TOOLBOX_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-// Include admin settings file.
-if ( file_exists( BDS_TOOLBOX_PLUGIN_DIR . 'includes/admin-settings.php' ) ) {
-    require_once BDS_TOOLBOX_PLUGIN_DIR . 'includes/admin-settings.php';
-} else {
-    return;
-}
+        self::$geoip_db_path = BDS_TOOLBOX_PLUGIN_DIR . 'GeoLite2-Country.mmdb';
 
-// Activation hook.
-register_activation_hook( __FILE__, 'bds_toolbox_activate' );
-function bds_toolbox_activate() {
-    if ( ! get_option( 'bds_toolbox_custom_html' ) ) {
-        $default_html = '<h1>Access Restricted</h1><p>This content is not available in your location.</p>';
-        update_option( 'bds_toolbox_custom_html', $default_html );
-    }
-}
+        self::load_dependencies();
 
-// Deactivation hook.
-register_deactivation_hook( __FILE__, 'bds_toolbox_deactivate' );
-function bds_toolbox_deactivate() {
-    // Cleanup tasks (if needed).
-}
+        // Load translations
+        add_action('plugins_loaded', [__CLASS__, 'load_textdomain']);
 
-// Add GeoIP check to front-end requests.
-add_action( 'template_redirect', 'bds_toolbox_geoip_filter' );
+        register_activation_hook(__FILE__, [__CLASS__, 'activate']);
+        register_deactivation_hook(__FILE__, [__CLASS__, 'deactivate']);
 
-function bds_toolbox_geoip_filter() {
-    // Define the path to the GeoIP database.
-    if ( ! defined( 'BDS_TOOLBOX_GEOIP_DB' ) || ! file_exists( BDS_TOOLBOX_GEOIP_DB ) ) {
-        return; // Skip GeoIP check if the database is missing or undefined.
+        add_action('template_redirect', [__CLASS__, 'geoip_filter']);
     }
 
-    // Validate and sanitize the visitor's IP address.
-    $visitor_ip = '';
-    if ( isset( $_SERVER['REMOTE_ADDR'] ) ) {
-        $raw_ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ); // Unslash and sanitize the input.
-        $visitor_ip = filter_var( $raw_ip, FILTER_VALIDATE_IP );
-    }
-
-    // Skip processing if the IP address is invalid.
-    if ( ! $visitor_ip ) {
-        return;
-    }
-
-    try {
-        // Initialize GeoIP2 Reader.
-        $reader = new GeoIp2\Database\Reader( BDS_TOOLBOX_GEOIP_DB );
-        $record = $reader->country( $visitor_ip );
-        $country_code = $record->country->isoCode;
-
-        // Check if the visitor is from Israel (ISO code: IL).
-        if ( $country_code === 'IL' ) {
-            // Retrieve custom HTML content from the database.
-            $custom_html = get_option( 'bds_toolbox_custom_html', '' );
-
-            // Display the custom content or a default message if not set.
-            if ( $custom_html ) {
-                echo wp_kses_post( $custom_html );
-            } else {
-                echo '<h1>BDS Standard Page</h1><p>This is the standard BDS content.</p>';
-            }
-
-            exit; // Stop further processing.
+    /**
+     * Load necessary dependencies.
+     */
+    private static function load_dependencies() {
+        if (file_exists(BDS_TOOLBOX_PLUGIN_DIR . 'vendor/autoload.php')) {
+            require_once BDS_TOOLBOX_PLUGIN_DIR . 'vendor/autoload.php';
+        } else {
+            do_action('bds_toolbox_error', __('BDS Toolbox: Missing vendor/autoload.php', 'bds-toolbox'));
+            return;
         }
-    } catch ( Exception $e ) {
-        // Handle GeoIP errors gracefully.
-        // Optionally log the error using error_log if debugging is required:
-        // error_log( 'GeoIP error: ' . $e->getMessage() );
+
+        if (file_exists(BDS_TOOLBOX_PLUGIN_DIR . 'includes/admin-settings.php')) {
+            require_once BDS_TOOLBOX_PLUGIN_DIR . 'includes/admin-settings.php';
+        } else {
+            do_action('bds_toolbox_error', __('BDS Toolbox: Missing admin-settings.php', 'bds-toolbox'));
+            return;
+        }
+    }
+
+    /**
+     * Load plugin translations.
+     */
+    public static function load_textdomain() {
+        load_plugin_textdomain('bds-toolbox', false, dirname(plugin_basename(__FILE__)) . '/languages/');
+    }
+
+    /**
+     * Plugin activation hook.
+     */
+    public static function activate() {
+        if (!get_option(self::OPTION_NAME)) {
+            $default_html = '<h1>' . esc_html__('Access Restricted', 'bds-toolbox') . '</h1><p>' . esc_html__('This content is not available in your location.', 'bds-toolbox') . '</p>';
+            update_option(self::OPTION_NAME, $default_html);
+        }
+    }
+
+    /**
+     * Plugin deactivation hook.
+     */
+    public static function deactivate() {
+        // Cleanup tasks if needed.
+    }
+
+    /**
+     * GeoIP filter for visitors.
+     */
+    public static function geoip_filter() {
+        if (!file_exists(self::$geoip_db_path)) {
+            do_action('bds_toolbox_error', __('BDS Toolbox: GeoIP database missing.', 'bds-toolbox'));
+            return;
+        }
+
+        $visitor_ip = '';
+        if (!empty($_SERVER['REMOTE_ADDR'])) {
+            // Unslash and sanitize IP before filtering
+            $raw_ip = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
+            $visitor_ip = filter_var($raw_ip, FILTER_VALIDATE_IP);
+        }
+
+        if (!$visitor_ip) {
+            return;
+        }
+
+        try {
+            $reader = new GeoIp2\Database\Reader(self::$geoip_db_path);
+            $record = $reader->country($visitor_ip);
+            $country_code = $record->country->isoCode;
+
+            if ($country_code === 'IL') {
+                $custom_html = get_option(self::OPTION_NAME, '');
+
+                if ($custom_html) {
+                    echo wp_kses_post($custom_html);
+                } else {
+                    echo '<h1>' . esc_html__('BDS Standard Page', 'bds-toolbox') . '</h1><p>' . esc_html__('This is the standard BDS content.', 'bds-toolbox') . '</p>';
+                }
+
+                exit;
+            }
+        } catch (Exception $e) {
+            do_action('bds_toolbox_error', __('BDS Toolbox GeoIP Error:', 'bds-toolbox') . ' ' . esc_html($e->getMessage()));
+        }
     }
 }
+
+// Initialize the plugin.
+BDSToolbox::init();
